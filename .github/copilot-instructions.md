@@ -1,15 +1,15 @@
 <!--
 Concise guide (20-50 lines) to help AI agents and new contributors become productive quickly.
-This repository currently contains the initial skeleton for the ScriptFlow orchestrator.
-The document includes a discovery checklist plus project-specific guidance for the ScriptFlow initiative.
+This repository currently contains the initial skeleton for the MyCn18 orchestrator.
+The document includes a discovery checklist plus project-specific guidance for the MyCn18 initiative.
 Keep this file up-to-date: summarize the project's mission, next milestones, and how todos map
 to GitHub Issues (only sync to Issues after human approval).
 -->
 
-# Copilot instructions for scriptflow-orchestrator (ScriptFlow)
+# Copilot instructions for mycn18-core-orchestrator (MyCn18)
 
 Project snapshot
-- Name: scriptflow-orchestrator (aka ScriptFlow)
+- Name: mycn18-core-orchestrator (aka MyCn18)
 - Mission: secure, fast, and cost-efficient serverless runtime that allows users to inject
   TypeScript/JS logic into automation workflows.
 - Core design choices: build-time dependency installation (faster cold starts) and a minimal audited sandbox (vm2).
@@ -23,7 +23,7 @@ Required discovery checklist
 Project-specific patterns to preserve
 - Build-time deps: install whitelist deps during the Docker build stage and COPY only `dist` + required `node_modules` to final image.
 - Sandbox: use `vm2` with enforced timeouts (5s) and memory limits; white-list builtin and external modules. Avoid direct host `require(mod)` mapping.
-- Separation of concerns: orchestration (auth, webhooks, flow selection) is decoupled from the VM-runner; designed to be extractable as `scriptflow-vm-runner`.
+- Separation of concerns: orchestration (auth, webhooks, flow selection) is decoupled from the VM-runner; designed to be extractable as `mycn18-vm-runner`.
 - Secrets management: utilize Google Secret Manager for sensitive data; do not accept secrets in request bodies for production flows.
 
 Developer workflows (examples)
@@ -46,15 +46,15 @@ Want more detail?
     <!--
     Concise guide (20-50 lines) to help AI agents and new contributors become productive quickly.
     This repository currently contains only a `.git/` folder. The document includes a discovery
-    checklist plus project-specific guidance for the ScriptFlow initiative. Keep
+    checklist plus project-specific guidance for the MyCn18 initiative. Keep
     this file up-to-date: summarize the project's mission, next milestones, and how todos map
     to GitHub Issues (only sync to Issues after human approval).
     -->
 
-    # Copilot instructions for scriptflow-orchestrator (ScriptFlow)
+    # Copilot instructions for mycn18-core-orchestrator (MyCn18)
 
     Project snapshot
-    - Name: scriptflow-orchestrator (aka ScriptFlow)
+    - Name: mycn18-core-orchestrator (aka MyCn18)
     - Mission: secure, fast, and cost-efficient serverless runtime that allows users to inject
       TypeScript/JS logic into automation workflows. Core design choices: build-time dependency
       installation (faster cold starts) and a minimal audited sandbox (vm2).
@@ -67,7 +67,7 @@ Want more detail?
     Project-specific patterns to preserve
     - Build-time deps: install whitelist deps during the Docker build stage and COPY only `dist` + required `node_modules` to final image.
     - Sandbox: use `vm2` (or equivalent) with enforced timeouts and memory limits; white-list builtin and external modules.
-    - Separation of concerns: orchestration (auth, webhooks, flow selection) should remain decoupled from the VM-runner; extractable as `scriptflow-vm-runner`.
+    - Separation of concerns: orchestration (auth, webhooks, flow selection) should remain decoupled from the VM-runner; extractable as `mycn18-vm-runner`.
 
     Developer workflows (examples — adapt after discovering files)
     - Node/TS (PowerShell): `npm ci; npm test; npm run build`.

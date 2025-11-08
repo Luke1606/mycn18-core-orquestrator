@@ -1,7 +1,7 @@
 {
-  "name": "scriptflow-core-orchestrator",
+  "name": "mycn18-core-orchestrator",
   "version": "1.0.0",
-  "description": "ScriptFlow - orchestrator runtime (MVP)",
+  "description": "mycn18 - orchestrator runtime (MVP)",
   "main": "dist/server.js",
   "author": "Luis Alberto Hernández Roselló",
   "license": "MIT",
@@ -10,8 +10,9 @@
     "node": ">=20 <21"
   },
   "keywords": [
-    "scriptflow",
+    "mycn18",
     "orchestrator",
+    "automation",
     "serverless",
     "vm2"
   ],

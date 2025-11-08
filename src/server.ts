@@ -193,7 +193,7 @@ app.post('/api/webhook/:flowId', async (c) => {
 app.get('/health', (c) => c.text('OK', 200));
 
 // --- Exportación del Handler ---
-logger.info(`ScriptFlow Orchestrator initialized. Listening on port ${PORT}`);
+logger.info(`MyCn18 Orchestrator initialized. Listening on port ${PORT}`);
 
 export default {
     port: PORT,

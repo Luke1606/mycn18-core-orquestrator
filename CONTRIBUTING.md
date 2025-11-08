@@ -1,15 +1,15 @@
-# Contributing to ScriptFlow Core Orchestrator
+# Contributing to MyCn18 Core Orchestrator
 
-We welcome contributions to the ScriptFlow Orchestrator project! By participating, you agree to abide by our Code of Conduct.
+We welcome contributions to the MyCn18 Orchestrator project! By participating, you agree to abide by our Code of Conduct.
 
 ## How to Contribute
 
-1. **Fork the Repository**: Start by forking the `scriptflow-core-orchestrator` repository to your GitHub account.
+1. **Fork the Repository**: Start by forking the `mycn18-core-orchestrator` repository to your GitHub account.
 2. **Clone Your Fork**: Clone your forked repository to your local machine.
 
     ```bash
-    git clone https://github.com/YOUR_USERNAME/scriptflow-core-orchestrator.git
-    cd scriptflow-core-orchestrator
+    git clone https://github.com/YOUR_USERNAME/mycn18-core-orchestrator.git
+    cd mycn18-core-orchestrator
     ```
 
 3. **Create a New Branch**: Create a new branch for your feature or bug fix.

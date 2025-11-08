@@ -2,11 +2,11 @@
 
 ## Reporting a Vulnerability
 
-We take the security of ScriptFlow Orchestrator seriously. If you discover a security vulnerability, please report it to us as soon as possible. We appreciate your efforts to responsibly disclose your findings.
+We take the security of MyCn18 Orchestrator seriously. If you discover a security vulnerability, please report it to us as soon as possible. We appreciate your efforts to responsibly disclose your findings.
 
 **Please DO NOT open a public GitHub issue for security vulnerabilities.**
 
-Instead, please send an email to [YOUR_SECURITY_EMAIL@example.com] with the subject line "Security Vulnerability Report - ScriptFlow Orchestrator".
+Instead, please send an email to [YOUR_SECURITY_EMAIL@example.com] with the subject line "Security Vulnerability Report - MyCn18 Orchestrator".
 
 In your report, please include:
 
@@ -25,4 +25,4 @@ We are committed to:
 - Keeping you informed of our progress throughout the remediation process.
 - Publicly acknowledging your responsible disclosure (if you agree) once the vulnerability has been addressed.
 
-Thank you for helping us keep ScriptFlow Orchestrator secure.
+Thank you for helping us keep MyCn18 Orchestrator secure.

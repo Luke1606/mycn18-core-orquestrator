@@ -1,8 +1,6 @@
 node_modules/
-dist/
-.env
-/.vscode/
 coverage/
+dist/
+/.vscode/
 npm-debug.log*
-node_modules/*
 TODOs.md

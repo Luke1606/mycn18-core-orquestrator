@@ -1,6 +1,6 @@
-# scriptflow-orchestrator (ScriptFlow)
+# mycn18-core-orchestrator (MyCn18)
 
-Minimal skeleton for the ScriptFlow orchestrator runtime (MVP).
+Minimal skeleton for the MyCn18 orchestrator runtime (MVP).
 
 Quickstart (local)
 
