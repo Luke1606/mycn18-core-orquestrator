@@ -4,16 +4,17 @@ import { FlowPayload, FlowSecrets, ExecutionResult, ExecutionLog, LogStatus } fr
 import { getFlowDocument, logExecution } from './db'; 
 import { dispatchActionAsynchronously, sendActionWebhook } from './action'; 
 import { resolveUserSecrets } from './secrets';
+import { logger } from './logger';
 
 // --- Configuración del Servidor ---
 const app = new Hono();
 const PORT = process.env.PORT || 8080; 
 
-// Middleware para logs simples
+// Middleware para logs estructurados
 app.use('*', async (c, next) => {
-    // Los logs deben ser mínimos en el hilo crítico. Cloud Run gestiona los logs de console.
-    console.log(`[REQUEST] ${c.req.method}: ${c.req.url}`);
+    logger.info(`Request received`, { method: c.req.method, url: c.req.url });
     await next();
+    logger.info(`Request completed`, { method: c.req.method, url: c.req.url, status: c.res.status });
 });
 
 // --- Endpoint Principal del Webhook ---
@@ -24,7 +25,8 @@ app.post('/api/webhook/:flowId', async (c) => {
     let payload: FlowPayload;
     try {
         payload = await c.req.json();
-    } catch (e) {
+    } catch (e: any) {
+        logger.error('Failed to parse request body as JSON', e, { flowId });
         payload = {};
     }
 
@@ -35,14 +37,14 @@ app.post('/api/webhook/:flowId', async (c) => {
 
     if (!flow || !flow.isActive) {
         const message = `Flow ${flowId} not found, inactive, or DB connection failed.`;
+        logger.warn(message, { flowId, userId });
         
         // Registrar el intento fallido (asíncronamente)
-        logExecution({
+        logger.executionLog({
             flowId,
             userId,
             status: LogStatus.FAIL,
             durationMs: performance.now() - startTime,
-            timestamp: new Date(),
             payload,
             error: message
         });
@@ -50,10 +52,24 @@ app.post('/api/webhook/:flowId', async (c) => {
         return c.json({ status: 'rejected', flowId: flowId, message }, 404);
     }
 
-    const { userCode, secretReferences } = flow;
+    const { userCode, secretReferences } = flow; // Usar secretReferences
     
     // 1. Resolución de Secrets
-    const resolvedSecrets = await resolveUserSecrets(secretReferences);
+    let resolvedSecrets: FlowSecrets;
+    try {
+        resolvedSecrets = await resolveUserSecrets(secretReferences); // Pasar secretReferences
+    } catch (error: any) {
+        logger.error(`Failed to resolve secrets for flow ${flowId}`, error, { flowId, userId });
+        logger.executionLog({
+            flowId,
+            userId,
+            status: LogStatus.FAIL,
+            durationMs: performance.now() - startTime,
+            payload,
+            error: `Secret resolution failed: ${error.message}`
+        });
+        return c.json({ status: 'failed', flowId: flowId, message: `Secret resolution failed: ${error.message}` }, 500);
+    }
     
     // 2. Inyección de Secrets
     const executionSecrets: FlowSecrets = { 
@@ -82,12 +98,12 @@ app.post('/api/webhook/:flowId', async (c) => {
             finalStatus = LogStatus.ACTION_FAIL; 
             
             // Loguear el fallo de puesta en cola (asíncronamente)
-            logExecution({
+            logger.error(`Action dispatch failed for flow ${flowId}`, new Error(dispatchStatus.error), { flowId, userId, result: executionResult.result });
+            logger.executionLog({
                 flowId,
                 userId,
                 status: finalStatus,
                 durationMs,
-                timestamp: new Date(),
                 payload,
                 result: executionResult.result,
                 error: `Action Dispatch Error: ${dispatchStatus.error}`,
@@ -104,12 +120,11 @@ app.post('/api/webhook/:flowId', async (c) => {
 
         // Éxito completo (Script OK y Tarea Queued OK)
         // Loguear el éxito (asíncronamente)
-        logExecution({
+        logger.executionLog({
             flowId,
             userId,
             status: LogStatus.SUCCESS, 
             durationMs,
-            timestamp: new Date(),
             payload,
             result: executionResult.result,
             actionStatus: 202, // 202 Accepted por la cola
@@ -125,19 +140,18 @@ app.post('/api/webhook/:flowId', async (c) => {
         
     } else {
         // El script falló 
-        console.error(`Execution failure for flow ${flowId}:`, executionResult.error);
+        logger.error(`Execution failure for flow ${flowId}`, new Error(executionResult.error), { flowId, userId });
         
         if (executionResult.error.toLowerCase().includes('timeout')) {
             finalStatus = LogStatus.TIMEOUT;
         }
         
         // Loguear el fallo de ejecución (asíncronamente)
-        logExecution({
+        logger.executionLog({
             flowId,
             userId,
             status: finalStatus,
             durationMs,
-            timestamp: new Date(),
             payload,
             error: executionResult.error
         });
@@ -154,7 +168,7 @@ app.post('/api/webhook/:flowId', async (c) => {
 app.get('/health', (c) => c.text('OK', 200));
 
 // --- Exportación del Handler ---
-console.log(`ScriptFlow Orchestrator initialized.`);
+logger.info(`ScriptFlow Orchestrator initialized. Listening on port ${PORT}`);
 
 export default {
     port: PORT,

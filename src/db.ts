@@ -1,8 +1,9 @@
 import { initializeApp, FirebaseApp, getApps, FirebaseOptions } from 'firebase/app';
 // Importamos la API web de Firestore para usarla en Cloud Run
 import { getFirestore, doc, getDoc, Firestore, collection, addDoc } from 'firebase/firestore'; 
-import { FlowDocument, FlowSecrets } from './types';
+import { FlowDocument } from './types';
 import { ExecutionLog } from './types';
+import { logger } from './logger'; // Import the new logger
 
 // -------------------------------------------------------------
 // 0. CONFIGURACIÓN
@@ -19,7 +20,7 @@ const appId: string | undefined = process.env.FIREBASE_APP_ID;
 
 if (!apiKey || !authDomain || !projectId || !storageBucket || !messagingSenderId || !appId) {
     const errorMessage: string = 'One or more Firebase configuration environment variables are missing.';
-    console.warn(errorMessage, {
+    logger.warn(errorMessage, {
         FIREBASE_API_KEY: !!apiKey,
         FIREBASE_AUTH_DOMAIN: !!authDomain,
         FIREBASE_PROJECT_ID: !!projectId,
@@ -57,21 +58,21 @@ export const initializeFirebase = (): void => {
 
         if (!app) {
             const errorMessage: string = 'Firebase app instance is undefined despite getApps() returning length > 0.'
-            console.warn(errorMessage, getApps());
+            logger.warn(errorMessage, { apps: getApps().map(app => app.name) }); // Pass app names for logging
             throw new Error(errorMessage);
         }
 
         db = getFirestore(app);
-        console.log('Firestore client already initialized.');
+        logger.info('Firestore client already initialized.');
         return;
     }
     
     try {
         app = initializeApp(FIREBASE_CONFIG);
         db = getFirestore(app);
-        console.log('Firestore client initialized successfully.');
+        logger.info('Firestore client initialized successfully.');
     } catch (error) {
-        console.error('Error initializing Firebase:', error);
+        logger.error('Error initializing Firebase:', error);
     }
 };
 
@@ -90,7 +91,7 @@ initializeFirebase();
 export const getFlowDocument = async (flowId: string): Promise<FlowDocument | null> => {
     if (!db) {
         const errorMessage: string = 'Database not initialized.';
-        console.warn(errorMessage);
+        logger.warn(errorMessage);
         throw new Error(errorMessage);
     }
 
@@ -111,7 +112,7 @@ export const getFlowDocument = async (flowId: string): Promise<FlowDocument | nu
         
         return null; // El flujo no existe o está inactivo
     } catch (error) {
-        console.error(`Error fetching flow ${flowId} from Firestore:`, error);
+        logger.error(`Error fetching flow ${flowId} from Firestore:`, error, { flowId });
         return null; // Error de conexión o de lectura
     }
 };
@@ -127,7 +128,7 @@ export const getFlowDocument = async (flowId: string): Promise<FlowDocument | nu
 export const logExecution = async (logData: ExecutionLog): Promise<void> => {
     if (!db) {
         const errorMessage: string = 'Database not initialized.';
-        console.warn(errorMessage);
+        logger.warn(errorMessage);
         throw new Error(errorMessage);
     }
 
@@ -136,7 +137,7 @@ export const logExecution = async (logData: ExecutionLog): Promise<void> => {
         const logsCollection = collection(db, 'execution_logs');
         await addDoc(logsCollection, logData);
     } catch (error) {
-        console.error(`CRITICAL: Failed to save execution log for ${logData.flowId}:`, error);
+        logger.error(`CRITICAL: Failed to save execution log for ${logData.flowId}:`, error, { flowId: logData.flowId });
         // En un escenario real, esto debería ir a un sistema de errores de emergencia.
     }
 };
