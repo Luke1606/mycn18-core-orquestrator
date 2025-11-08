@@ -42,6 +42,8 @@ const FIREBASE_CONFIG: FirebaseOptions = {
 
 let app: FirebaseApp | undefined; // Permite que sea undefined si no se inicializa
 let db: Firestore | undefined;    // Permite que sea undefined si no se inicializa
+let app: FirebaseApp | undefined; // Permite que sea undefined si no se inicializa
+let db: Firestore | undefined;    // Permite que sea undefined si no se inicializa
 
 // -------------------------------------------------------------
 // 1. INICIALIZACIÓN DE FIREBASE
@@ -50,8 +52,11 @@ let db: Firestore | undefined;    // Permite que sea undefined si no se iniciali
 /**
  * Inicializa la aplicación Firebase y el servicio Firestore (solo una vez).
  * Esto es clave para el rendimiento en el entorno serverless (cold start).
+ * Inicializa la aplicación Firebase y el servicio Firestore (solo una vez).
+ * Esto es clave para el rendimiento en el entorno serverless (cold start).
  */
 export const initializeFirebase = (): void => {
+    // Si ya está inicializada (patrón singleton), usa la instancia existente.
     // Si ya está inicializada (patrón singleton), usa la instancia existente.
     if (getApps().length) {
         app = getApps()[0];
@@ -77,13 +82,16 @@ export const initializeFirebase = (): void => {
 };
 
 // Se ejecuta al cargar el módulo (durante el cold start).
+// Se ejecuta al cargar el módulo (durante el cold start).
 initializeFirebase();
 
 // -------------------------------------------------------------
 // 2. FUNCIONES DE LECTURA DE FLUJOS (Orquestación)
+// 2. FUNCIONES DE LECTURA DE FLUJOS (Orquestación)
 // -------------------------------------------------------------
 
 /**
+ * Recupera un documento de flujo por su flowId.
  * Recupera un documento de flujo por su flowId.
  * @param flowId - El ID del flujo a buscar.
  * @returns El FlowDocument si se encuentra y está activo, o null.
@@ -97,6 +105,7 @@ export const getFlowDocument = async (flowId: string): Promise<FlowDocument | nu
 
     try {
         // Asumimos que los flujos se almacenan en una colección 'flows'
+        // Asumimos que los flujos se almacenan en una colección 'flows'
         const flowRef = doc(db, 'flows', flowId);
         const flowSnap = await getDoc(flowRef);
 
@@ -104,6 +113,9 @@ export const getFlowDocument = async (flowId: string): Promise<FlowDocument | nu
             const data = flowSnap.data() as FlowDocument;
             
             if (data.isActive) {
+                // Devolvemos los datos. El tipado FlowDocument asume que
+                // las propiedades ya son correctas.
+                return data;
                 // Devolvemos los datos. El tipado FlowDocument asume que
                 // las propiedades ya son correctas.
                 return data;
