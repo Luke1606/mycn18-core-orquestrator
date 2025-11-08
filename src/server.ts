@@ -1,9 +1,10 @@
 import { Hono } from 'hono';
-import { executeUserScript } from './runtime';
+import { executeUserScript } from './runtime'; 
 import { FlowPayload, FlowSecrets, ExecutionResult } from './types';
+import { getFlowDocument } from './db'; 
+import { sendActionWebhook } from './action';
 
 // --- Configuración del Servidor y Tipos ---
-
 const app = new Hono();
 
 // El puerto es necesario solo si se ejecuta localmente con un servidor HTTP tradicional
@@ -16,9 +17,9 @@ app.use('*', async (c, next) => {
     await next();
 });
 
-// --- Endpoint del Webhook (El Músculo de la Orquestación) ---
-
+// --- Endpoint Principal del Webhook ---
 app.post('/api/webhook/:flowId', async (c) => {
+
     const flowId = c.req.param('flowId');
 
     // 1. Obtener datos del Webhook
@@ -29,58 +30,52 @@ app.post('/api/webhook/:flowId', async (c) => {
         // En caso de que el cuerpo no sea JSON, lo tratamos como vacío.
         payload = {};
     }
-
-    // --- Lógica de Orquestación (Simulación MVP) ---
+    // --- Lógica de Orquestación Real: Cargar de Firestore ---
     
-    // **NOTA CLAVE:** En la versión real, estas variables se cargarían de Firestore/DB.
-    // Para el MVP y el testing, simulamos un flujo exitoso:
-    
-    // 1. Cargar Código: El código que el usuario escribió en el Monaco Editor.
-    const mockUserCode: string = `
-        const axios = require('axios'); // Dependencia de lista blanca
-        console.log('Flow started for ID:', flowId);
-        
-        // Simulación de una llamada a una API externa con axios (valor clave)
-        // const response = await axios.post(payload.action_url, { status: 'processing' }); 
+    const flow = await getFlowDocument(flowId);
 
-        if (payload.event_type === 'invoice.paid') {
-            return {
-                status: 'success',
-                message: 'Invoice processed and ready for logging.',
-                data: {
-                    id: payload.id,
-                    amount: payload.amount,
-                }
-            };
-        }
-        
-        return { status: 'skipped', message: 'Event type not relevant.' };
-    `;
+    if (!flow || !flow.isActive) {
+        const message = `Flow ${flowId} not found or is inactive.`;
+        console.warn(message);
+        return c.json({ status: 'rejected', flowId: flowId, message }, 404);
+    }
 
-    // 2. Cargar Secrets: Variables de entorno para el script.
-    const mockSecrets: FlowSecrets = { 
-        STRIPE_KEY: process.env.STRIPE_SECRET || 'sk_mock_default_xxx',
-        FLOW_ID: flowId, // Inyectar el ID del flujo como un secret
-    };
+    const { userCode, secrets } = flow;
+    const executionSecrets: FlowSecrets = { ...secrets, FLOW_ID: flowId };
 
     // --- Ejecución en la Caja de Arena ---
     
     const executionResult: ExecutionResult = await executeUserScript(
-        mockUserCode,
+        userCode,
         payload,
-        mockSecrets
+        executionSecrets
     );
 
     // --- Respuesta y Manejo de Errores ---
     
     if (executionResult.success) {
-        // El script terminó correctamente. Retornamos 200/202.
-        // Aquí se ejecutaría la LÓGICA DE ACCIÓN (fetch a la URL final del usuario)
+        // 1. Ejecutar la acción de salida
+        const actionStatus = await sendActionWebhook(flow, executionResult.result); 
+        
+        // 2. Determinar la respuesta final del Webhook
+        if (!actionStatus.success) {
+            // El script funcionó, pero el webhook de salida falló (ej. URL caída).
+            // Retornamos 500 para indicar un error de la cadena de flujo,
+            // pero el error es del servidor remoto.
+            return c.json({ 
+                status: 'action_failed', 
+                flowId: flowId, 
+                message: `Action webhook failed: ${actionStatus.error}` 
+            }, 500); 
+        }
+
+        // Éxito completo (Script OK y Acción OK)
         return c.json({ 
             status: 'completed', 
             flowId: flowId, 
             result: executionResult.result 
         }, 200);
+        
     } else {
         // El script falló (error de sintaxis, timeout, o error lógico).
         console.error(`Execution failure for flow ${flowId}:`, executionResult.error);

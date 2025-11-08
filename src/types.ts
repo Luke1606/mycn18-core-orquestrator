@@ -21,3 +21,23 @@ export type ExecutionResult = {
     success: false;
     error: string; // Mensaje de error (ej: timeout, error de sintaxis, etc.)
 };
+
+
+// -------------------------------------------------------------
+// TIPOS PARA LA BASE DE DATOS Y ORQUESTACIÓN
+// -------------------------------------------------------------
+
+/**
+ * Estructura de un Flow Document almacenado en Firestore.
+ * El motor Orchestrator solo necesita estos campos.
+ */
+export type FlowDocument = {
+    userId: string;
+    flowId: string;
+    isActive: boolean;
+    userCode: string;           // El código TS/JS a ejecutar
+    secrets: FlowSecrets;       // Las credenciales/variables de entorno
+    actionUrl: string;          // El Webhook de salida (a dónde enviar el resultado)
+    createdAt: Date;
+    updatedAt: Date;
+};

@@ -9,23 +9,29 @@
     "build": "tsc -p .",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "keywords": ["scriptflow", "orchestrator", "serverless", "vm2"],
+  "keywords": [
+    "scriptflow",
+    "orchestrator",
+    "serverless",
+    "vm2"
+  ],
   "author": "Luis Alberto Hernández Roselló",
   "license": "MIT",
   "type": "commonjs",
   "dependencies": {
     "axios": "^1.4.0",
-    "hono": "^3.0.0",
+    "firebase": "^12.5.0",
+    "hono": "^4.10.4",
     "vm2": "^3.9.16"
   },
   "devDependencies": {
-    "ts-node-dev": "^2.0.0",
     "@types/node": "^24.10.0",
     "@typescript-eslint/eslint-plugin": "^8.46.3",
     "@typescript-eslint/parser": "^8.46.3",
     "eslint": "^9.39.1",
     "prettier": "^3.6.2",
     "ts-node": "^10.9.2",
+    "ts-node-dev": "^2.0.0",
     "typescript": "^5.9.3"
   }
 }
