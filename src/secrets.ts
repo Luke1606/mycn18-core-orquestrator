@@ -1,6 +1,6 @@
 import { SecretManagerServiceClient } from '@google-cloud/secret-manager';
-import { FlowSecrets } from './types'; 
-import { logger } from './logger';
+import { FlowSecrets } from './types.js'; 
+import { logger } from './logger.js';
 
 // --- Configuración y Clientes ---
 
@@ -62,7 +62,7 @@ export async function resolveUserSecrets(flowSecrets: FlowSecrets): Promise<Flow
                 return [key, secretValue];
             } catch (error) {
                 // Si la resolución falla, el flujo debe abortar por seguridad
-                logger.error(`SECURITY_CRITICAL: Flow aborted due to failure resolving secret ${key}.`);
+                logger.error(`SECURITY_CRITICAL: Flow aborted due to failure resolving secret ${key}.`, error);
                 throw error; 
             }
         }

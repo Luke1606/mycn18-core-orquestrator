@@ -1,15 +1,13 @@
 import { initializeApp, FirebaseApp, getApps, FirebaseOptions } from 'firebase/app';
 import { getFirestore, doc, getDoc, Firestore, collection, addDoc } from 'firebase/firestore'; 
-import { FlowDocument } from './types';
-import { ExecutionLog } from './types';
-import { logger } from './logger'; // Import the new logger
+import { FlowDocument, ExecutionLog } from './types.js';
+import { logger } from './logger.js';
 
 // -------------------------------------------------------------
 // 0. CONFIGURACIÓN
 // -------------------------------------------------------------
 
 // Las opciones de Firebase se leen de las variables de entorno de Cloud Run.
-
 const apiKey: string | undefined = process.env.FIREBASE_API_KEY;
 const authDomain: string | undefined = process.env.FIREBASE_AUTH_DOMAIN;
 const projectId: string | undefined = process.env.FIREBASE_PROJECT_ID;
@@ -39,8 +37,8 @@ const FIREBASE_CONFIG: FirebaseOptions = {
     appId,
 };
 
-let app: FirebaseApp | undefined; // Permite que sea undefined si no se inicializa
-let db: Firestore | undefined;    // Permite que sea undefined si no se inicializa
+let appInstance: FirebaseApp;
+let firestoreDb: Firestore;
 
 // -------------------------------------------------------------
 // 1. INICIALIZACIÓN DE FIREBASE
@@ -51,27 +49,25 @@ let db: Firestore | undefined;    // Permite que sea undefined si no se iniciali
  * Esto es clave para el rendimiento en el entorno serverless (cold start).
  */
 export const initializeFirebase = (): void => {
-    // Si ya está inicializada (patrón singleton), usa la instancia existente.
-    if (getApps().length) {
-        app = getApps()[0];
-
-        if (!app) {
-            const errorMessage: string = 'Firebase app instance is undefined despite getApps() returning length > 0.'
-            logger.warn(errorMessage, { apps: getApps().map(app => app.name) }); // Pass app names for logging
+    if (getApps().length === 0) {
+        try {
+            appInstance = initializeApp(FIREBASE_CONFIG);
+            firestoreDb = getFirestore(appInstance);
+            logger.info('Firestore client initialized successfully.');
+        } catch (error) {
+            logger.error('Error initializing Firebase:', error);
+            throw error; // Re-throw to prevent further execution with uninitialized DB
+        }
+    } else {
+        const existingApp = getApps()[0];
+        if (!existingApp) {
+            const errorMessage: string = 'Firebase app instance is undefined despite getApps() returning length > 0.';
+            logger.error(errorMessage);
             throw new Error(errorMessage);
         }
-
-        db = getFirestore(app);
+        appInstance = existingApp;
+        firestoreDb = getFirestore(appInstance);
         logger.info('Firestore client already initialized.');
-        return;
-    }
-    
-    try {
-        app = initializeApp(FIREBASE_CONFIG);
-        db = getFirestore(app);
-        logger.info('Firestore client initialized successfully.');
-    } catch (error) {
-        logger.error('Error initializing Firebase:', error);
     }
 };
 
@@ -88,23 +84,13 @@ initializeFirebase();
  * @returns El FlowDocument si se encuentra y está activo, o null.
  */
 export const getFlowDocument = async (flowId: string): Promise<FlowDocument | null> => {
-    if (!db) {
-        const errorMessage: string = 'Database not initialized.';
-        logger.warn(errorMessage);
-        throw new Error(errorMessage);
-    }
-
     try {
-        // Asumimos que los flujos se almacenan en una colección 'flows'
-        const flowRef = doc(db, 'flows', flowId);
+        const flowRef = doc(firestoreDb, 'flows', flowId);
         const flowSnap = await getDoc(flowRef);
 
         if (flowSnap.exists()) {
             const data = flowSnap.data() as FlowDocument;
-            
             if (data.isActive) {
-                // Devolvemos los datos. El tipado FlowDocument asume que
-                // las propiedades ya son correctas.
                 return data;
             }
         }
@@ -125,15 +111,8 @@ export const getFlowDocument = async (flowId: string): Promise<FlowDocument | nu
  * @param logData - Los datos del log a registrar.
  */
 export const logExecution = async (logData: ExecutionLog): Promise<void> => {
-    if (!db) {
-        const errorMessage: string = 'Database not initialized.';
-        logger.warn(errorMessage);
-        throw new Error(errorMessage);
-    }
-
     try {
-        // Creamos una nueva entrada de log.
-        const logsCollection = collection(db, 'execution_logs');
+        const logsCollection = collection(firestoreDb, 'execution_logs');
         await addDoc(logsCollection, logData);
     } catch (error) {
         logger.error(`CRITICAL: Failed to save execution log for ${logData.flowId}:`, error, { flowId: logData.flowId });

@@ -1,12 +1,7 @@
 import { VM, VMScript } from 'vm2';
-import { FlowPayload, FlowSecrets, ExecutionResult } from './types'; // Ahora incluye ExecutionResult
-import { logger } from './logger';
-
-/**
- * Lista blanca de módulos que el script del usuario tiene permitido importar.
- * Esta lista está pre-instalada en la imagen de Docker.
- */
-const ALLOWED_MODULES = ['axios', 'lodash', 'moment', 'ts-pattern'];
+import { FlowPayload, FlowSecrets, ExecutionResult } from './types.js';
+import { safeHttpClient } from './safe-mods/http.js';
+import { logger } from './logger.js';
 
 /**
  * Ejecuta el código del usuario dentro de un entorno seguro y aislado (sandbox).
@@ -20,17 +15,12 @@ export const executeUserScript = async (
     payload: FlowPayload,
     secrets: FlowSecrets
 ): Promise<ExecutionResult> => {
-    // Cargar los módulos permitidos directamente en el sandbox para evitar `require.mock`
-    // y reducir la superficie de ataque.
-    const sandboxedModules: Record<string, any> = {};
-    for (const mod of ALLOWED_MODULES) {
-        try {
-            sandboxedModules[mod] = require(mod);
-        } catch (error) {
-            logger.error(`[SANDBOX] Failed to load whitelisted module '${mod}'`, error);
-            // Si un módulo no se puede cargar, no lo inyectamos.
-        }
-    }
+    // Configuración del logger seguro para el sandbox
+    const sandboxedLogger = {
+        info: (message: string, context?: Record<string, unknown>) => logger.info(`[USER_SCRIPT] ${message}`, context),
+        warn: (message: string, context?: Record<string, unknown>) => logger.warn(`[USER_SCRIPT] ${message}`, context),
+        error: (message: string, error?: Error | unknown, context?: Record<string, unknown>) => logger.error(`[USER_SCRIPT] ${message}`, error, context),
+    };
 
     // 1. Configuración del Sandbox
     const vm = new VM({
@@ -39,21 +29,26 @@ export const executeUserScript = async (
         
         // Variables globales que el script puede acceder
         sandbox: {
-            payload: payload,   // Datos de entrada del webhook
-            env: secrets,       // Secrets inyectados como variables de entorno
-            console: console,   // Permite al usuario hacer logging
-            ...sandboxedModules // Inyección directa de módulos permitidos
+            payload: payload,       // Datos de entrada del webhook
+            env: secrets,           // Secrets inyectados como variables de entorno
+            console: sandboxedLogger, // Usar el logger seguro en lugar del console directo
+            http: safeHttpClient,
+            // Inyectar funciones de timer para código asíncrono
+            setTimeout: setTimeout,
+            clearTimeout: clearTimeout,
+            // No inyectar módulos del host directamente aquí.
+            // Si se necesitan otras utilidades (lodash, moment), se deben crear shims seguros.
         },
         
         // Configuración de Seguridad de Módulos (Lista Blanca)
-        // Deshabilitamos 'external' y 'mock' para forzar la inyección directa.
+        // Deshabilitamos 'external' y 'mock' para forzar la inyección controlada.
+        // @ts-expect-error - 'require' es una opción de vm2 válida pero no incluida en sus tipos oficiales.
         require: {
             external: false, // No permite require() externo
-            builtin: ['util', 'events'], // Módulos nativos de Node permitidos (minimalista)
+            builtin: [],     // No permite módulos nativos de Node por defecto
             root: './',
-            // mock ya no es necesario aquí, los módulos se inyectan en sandbox
         }
-    } as any);
+    }); // Cast to any to bypass TypeScript error for 'require' property
 
     try {
         // Envolver el código del usuario en una IIFE asíncrona para poder usar 'await' y 'return'.
@@ -68,12 +63,11 @@ export const executeUserScript = async (
         // El script se ejecutó sin errores y retornó un valor
         return { success: true, result };
         
-    } catch (err: any) {
+    } catch (error: Error | unknown) {
         // Captura errores de sintaxis, timeouts, o excepciones dentro del script
-        const errorMessage = err?.message ?? String(err);
+        const errorMessage = error instanceof Error? error.message : String(error);
         
-        // Limpiamos la referencia a la VM por seguridad después de un fallo
-        (vm as any).dispose(); 
+        // vm2 does not have a dispose method. The VM instance is garbage collected.
         
         return { success: false, error: errorMessage };
     }

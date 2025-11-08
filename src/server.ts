@@ -1,14 +1,19 @@
 import { Hono } from 'hono';
-import { executeUserScript } from './runtime'; 
-import { FlowPayload, FlowSecrets, ExecutionResult, ExecutionLog, LogStatus } from './types'; 
-import { getFlowDocument } from './db'; 
-import { dispatchActionAsynchronously } from './action'; 
-import { resolveUserSecrets } from './secrets';
-import { logger } from './logger';
+import { FlowPayload, FlowSecrets, ExecutionResult, ExecutionLog, LogStatus } from './types.js'; 
+import { dispatchActionAsynchronously } from './action.js'; 
+import { resolveUserSecrets } from './secrets.js';
+import { executeUserScript } from './runtime.js'; 
+import { getFlowDocument, logExecution } from './db.js'; 
+import { logger } from './logger.js';
 
 // --- Configuración del Servidor ---
 const app = new Hono();
 const PORT = process.env.PORT || 8080; 
+
+// Function to initialize logger with database logging
+export function initializeLogger() {
+    logger.initializeDatabaseLogging(logExecution);
+}
 
 // Middleware para logs estructurados
 app.use('*', async (c, next) => {
@@ -21,30 +26,42 @@ app.use('*', async (c, next) => {
 app.post('/api/webhook/:flowId', async (c) => {
     const startTime = performance.now(); 
     const flowId = c.req.param('flowId');
+    let userId: string = 'unknown'; // Initialize userId to 'unknown'
 
     let payload: FlowPayload;
     try {
-        payload = await c.req.json();
-    } catch (e: any) {
+        payload = (await c.req.json()) as FlowPayload;
+    } catch (e: unknown) {
         logger.error('Failed to parse request body as JSON', e, { flowId });
         payload = {};
+        // Log the failure and return 400 Bad Request for invalid JSON
+        logger.executionLog({
+            flowId,
+            userId, // Use the initialized userId
+            status: LogStatus.FAIL,
+            durationMs: performance.now() - startTime,
+            timestamp: new Date(),
+            payload: {}, // No valid payload
+            error: `Failed to parse request body as JSON: ${e instanceof Error ? e.message : String(e)}`
+        });
+        return c.json({ status: 'rejected', flowId: flowId, message: `Failed to parse request body: ${e instanceof Error ? e.message : String(e)}` }, 400);
     }
 
     // --- Lógica de Orquestación: Cargar y Validar ---
     
     const flow = await getFlowDocument(flowId);
-    let userId: string = flow ? flow.userId : 'unknown';
+    userId = flow ? flow.userId : 'unknown'; // Update userId if flow is found
 
     if (!flow || !flow.isActive) {
         const message = `Flow ${flowId} not found, inactive, or DB connection failed.`;
-        logger.warn(message, { flowId, userId });
-        
-        // Registrar el intento fallido (asíncronamente)
+
+        // Log: Flujo no encontrado o inactivo
         logger.executionLog({
             flowId,
             userId,
             status: LogStatus.FAIL,
             durationMs: performance.now() - startTime,
+            timestamp: new Date(),
             payload,
             error: message
         });
@@ -58,17 +75,20 @@ app.post('/api/webhook/:flowId', async (c) => {
     let resolvedSecrets: FlowSecrets;
     try {
         resolvedSecrets = await resolveUserSecrets(secretReferences); // Pasar secretReferences
-    } catch (error: any) {
-        logger.error(`Failed to resolve secrets for flow ${flowId}`, error, { flowId, userId });
+    } catch (error: unknown) {
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        
+        // Log: Fallo en resolución de secrets
         logger.executionLog({
             flowId,
             userId,
             status: LogStatus.FAIL,
             durationMs: performance.now() - startTime,
+            timestamp: new Date(),
             payload,
-            error: `Secret resolution failed: ${error.message}`
+            error: `Secret resolution failed: ${errorMessage}`
         });
-        return c.json({ status: 'failed', flowId: flowId, message: `Secret resolution failed: ${error.message}` }, 500);
+        return c.json({ status: 'failed', flowId: flowId, message: `Secret resolution failed: ${errorMessage}` }, 500);
     }
     
     // 2. Inyección de Secrets
@@ -99,11 +119,14 @@ app.post('/api/webhook/:flowId', async (c) => {
             
             // Loguear el fallo de puesta en cola (asíncronamente)
             logger.error(`Action dispatch failed for flow ${flowId}`, new Error(dispatchStatus.error), { flowId, userId, result: executionResult.result });
+            
+            // Log: Fallo en el dispatch a la cola
             logger.executionLog({
                 flowId,
                 userId,
                 status: finalStatus,
                 durationMs,
+                timestamp: new Date(),
                 payload,
                 result: executionResult.result,
                 error: `Action Dispatch Error: ${dispatchStatus.error}`,
@@ -119,12 +142,13 @@ app.post('/api/webhook/:flowId', async (c) => {
         }
 
         // Éxito completo (Script OK y Tarea Queued OK)
-        // Loguear el éxito (asíncronamente)
+        // Log: Éxito completo
         logger.executionLog({
             flowId,
             userId,
             status: LogStatus.SUCCESS, 
             durationMs,
+            timestamp: new Date(),
             payload,
             result: executionResult.result,
             actionStatus: 202, // 202 Accepted por la cola
@@ -146,12 +170,13 @@ app.post('/api/webhook/:flowId', async (c) => {
             finalStatus = LogStatus.TIMEOUT;
         }
         
-        // Loguear el fallo de ejecución (asíncronamente)
+        // Log: Fallo en la ejecución del script
         logger.executionLog({
             flowId,
             userId,
             status: finalStatus,
             durationMs,
+            timestamp: new Date(),
             payload,
             error: executionResult.error
         });
