@@ -1,1 +1,7 @@
+node_modules/
+dist/
+.env
+/.vscode/
+coverage/
+npm-debug.log*
 node_modules/*
