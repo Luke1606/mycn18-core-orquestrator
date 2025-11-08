@@ -50,10 +50,10 @@ app.post('/api/webhook/:flowId', async (c) => {
         return c.json({ status: 'rejected', flowId: flowId, message }, 404);
     }
 
-    const { userCode, secrets } = flow;
+    const { userCode, secretReferences } = flow;
     
     // 1. Resolución de Secrets
-    const resolvedSecrets = await resolveUserSecrets(secrets);
+    const resolvedSecrets = await resolveUserSecrets(secretReferences);
     
     // 2. Inyección de Secrets
     const executionSecrets: FlowSecrets = { 

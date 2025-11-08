@@ -36,7 +36,7 @@ export type FlowDocument = {
     flowId: string;
     isActive: boolean;
     userCode: string;           // El código TS/JS a ejecutar
-    secrets: FlowSecrets;       // Las credenciales/variables de entorno
+    secretReferences: FlowSecrets; // Referencias a los secrets (ej: nombres de recursos de GSM)
     actionUrl: string;          // El Webhook de salida (a dónde enviar el resultado)
     createdAt: Date;
     updatedAt: Date;

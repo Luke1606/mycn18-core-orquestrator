@@ -8,16 +8,6 @@ import { FlowPayload, FlowSecrets, ExecutionResult } from './types'; // Ahora in
 const ALLOWED_MODULES = ['axios', 'lodash', 'moment', 'ts-pattern'];
 
 /**
- * Mapea los módulos de la lista blanca para inyectarlos en el sandbox.
- * Esto asegura que solo las dependencias pre-aprobadas puedan ser requeridas.
- */
-const MOCKED_REQUIRE = ALLOWED_MODULES.reduce((acc, mod) => {
-    // Usamos 'require' nativo de Node.js para cargar el módulo real
-    return { ...acc, [mod]: require(mod) };
-}, {});
-
-
-/**
  * Ejecuta el código del usuario dentro de un entorno seguro y aislado (sandbox).
  * @param userCode - El script del usuario a ejecutar.
  * @param payload - Los datos del webhook.
@@ -29,7 +19,18 @@ export const executeUserScript = async (
     payload: FlowPayload,
     secrets: FlowSecrets
 ): Promise<ExecutionResult> => {
-    
+    // Cargar los módulos permitidos directamente en el sandbox para evitar `require.mock`
+    // y reducir la superficie de ataque.
+    const sandboxedModules: Record<string, any> = {};
+    for (const mod of ALLOWED_MODULES) {
+        try {
+            sandboxedModules[mod] = require(mod);
+        } catch (error) {
+            console.warn(`[SANDBOX] Failed to load whitelisted module '${mod}'`, error);
+            // Si un módulo no se puede cargar, no lo inyectamos.
+        }
+    }
+
     // 1. Configuración del Sandbox
     const vm = new VM({
         timeout: 5000,      // **CRÍTICO:** Límite estricto de 5 segundos de ejecución.
@@ -39,16 +40,17 @@ export const executeUserScript = async (
         sandbox: {
             payload: payload,   // Datos de entrada del webhook
             env: secrets,       // Secrets inyectados como variables de entorno
-            console: console    // Permite al usuario hacer logging
+            console: console,   // Permite al usuario hacer logging
+            ...sandboxedModules // Inyección directa de módulos permitidos
         },
         
         // Configuración de Seguridad de Módulos (Lista Blanca)
+        // Deshabilitamos 'external' y 'mock' para forzar la inyección directa.
         require: {
-            external: true, // Permite require()
-            // Módulos nativos de Node permitidos (minimalista)
-            builtin: ['util', 'events'], 
+            external: false, // No permite require() externo
+            builtin: ['util', 'events'], // Módulos nativos de Node permitidos (minimalista)
             root: './',
-            mock: MOCKED_REQUIRE // Inyección de módulos de la Lista Blanca
+            // mock ya no es necesario aquí, los módulos se inyectan en sandbox
         }
     } as any);
 
