@@ -1,4 +1,4 @@
-# scriptflow-orchestrator (ScriptFlow / Flow Weaver)
+# scriptflow-orchestrator (ScriptFlow)
 
 Minimal skeleton for the ScriptFlow orchestrator runtime (MVP).
 

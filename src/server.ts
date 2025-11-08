@@ -1,8 +1,8 @@
 import { Hono } from 'hono';
 import { executeUserScript } from './runtime'; 
 import { FlowPayload, FlowSecrets, ExecutionResult, ExecutionLog, LogStatus } from './types'; 
-import { getFlowDocument, logExecution } from './db'; 
-import { dispatchActionAsynchronously, sendActionWebhook } from './action'; 
+import { getFlowDocument } from './db'; 
+import { dispatchActionAsynchronously } from './action'; 
 import { resolveUserSecrets } from './secrets';
 import { logger } from './logger';
 
@@ -29,8 +29,6 @@ app.post('/api/webhook/:flowId', async (c) => {
         logger.error('Failed to parse request body as JSON', e, { flowId });
         payload = {};
     }
-
-    // --- Lógica de Orquestación: Cargar y Validar ---
 
     // --- Lógica de Orquestación: Cargar y Validar ---
     
@@ -166,7 +164,6 @@ app.post('/api/webhook/:flowId', async (c) => {
     }
 });
 
-// --- Endpoint de Salud ---
 // --- Endpoint de Salud ---
 app.get('/health', (c) => c.text('OK', 200));
 

@@ -1,15 +1,15 @@
 <!--
 Concise guide (20-50 lines) to help AI agents and new contributors become productive quickly.
-This repository currently contains the initial skeleton for the ScriptFlow / Flow Weaver orchestrator.
-The document includes a discovery checklist plus project-specific guidance for the ScriptFlow / Flow Weaver initiative.
+This repository currently contains the initial skeleton for the ScriptFlow orchestrator.
+The document includes a discovery checklist plus project-specific guidance for the ScriptFlow initiative.
 Keep this file up-to-date: summarize the project's mission, next milestones, and how todos map
 to GitHub Issues (only sync to Issues after human approval).
 -->
 
-# Copilot instructions for scriptflow-orchestrator (ScriptFlow / Flow Weaver)
+# Copilot instructions for scriptflow-orchestrator (ScriptFlow)
 
 Project snapshot
-- Name: scriptflow-orchestrator (aka ScriptFlow / Flow Weaver)
+- Name: scriptflow-orchestrator (aka ScriptFlow)
 - Mission: secure, fast, and cost-efficient serverless runtime that allows users to inject
   TypeScript/JS logic into automation workflows.
 - Core design choices: build-time dependency installation (faster cold starts) and a minimal audited sandbox (vm2).
@@ -46,15 +46,15 @@ Want more detail?
     <!--
     Concise guide (20-50 lines) to help AI agents and new contributors become productive quickly.
     This repository currently contains only a `.git/` folder. The document includes a discovery
-    checklist plus project-specific guidance for the ScriptFlow / Flow Weaver initiative. Keep
+    checklist plus project-specific guidance for the ScriptFlow initiative. Keep
     this file up-to-date: summarize the project's mission, next milestones, and how todos map
     to GitHub Issues (only sync to Issues after human approval).
     -->
 
-    # Copilot instructions for scriptflow-orchestrator (ScriptFlow / Flow Weaver)
+    # Copilot instructions for scriptflow-orchestrator (ScriptFlow)
 
     Project snapshot
-    - Name: scriptflow-orchestrator (aka ScriptFlow / Flow Weaver)
+    - Name: scriptflow-orchestrator (aka ScriptFlow)
     - Mission: secure, fast, and cost-efficient serverless runtime that allows users to inject
       TypeScript/JS logic into automation workflows. Core design choices: build-time dependency
       installation (faster cold starts) and a minimal audited sandbox (vm2).

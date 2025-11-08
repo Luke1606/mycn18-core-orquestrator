@@ -80,7 +80,7 @@ export const dispatchActionAsynchronously = async (
 
     try {
         await taskClient.createTask(task);
-        logger.log(`[TASKS] Action for flow ${flow.flowId} successfully queued to ${QUEUE_NAME}.`); 
+        logger.info(`[TASKS] Action for flow ${flow.flowId} successfully queued to ${QUEUE_NAME}.`); 
         return { success: true };
     } catch (error) {
         const errorMessage = `Failed to queue task: ${error instanceof Error ? error.message : String(error)}`;
