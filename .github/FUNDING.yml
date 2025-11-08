@@ -1,0 +1,27 @@
+# -----------------------------------------------------------------------------
+# MYCN18 FUNDING CONFIGURATION - SOLO DEVELOPER (Luke1606)
+# -----------------------------------------------------------------------------
+# This configuration directs all support to the individual developer, Luke1606, 
+# as external platform accounts (Patreon, Ko-fi) are not currently active.
+
+# Core Support Platforms (Code-Centric)
+
+github: [Luke1606]
+# GitHub Sponsors is the primary channel to directly support the creator, Luke1606.
+
+# Quick Donation & Project Platforms (Currently inactive/unestablished)
+
+# Tidelift and Community Bridge are generally not applicable for solo developer projects.
+
+# Technical Recognition
+# This automatically funds the maintainer based on usage.
+
+# Universal Custom Links
+# These links provide non-GitHub users (e.g., users coming from the plattform) simple ways to donate,
+# and offers professional service options.
+
+custom: [
+  'https://paypal.me/pendiente', # Universal donation link. (Account is not set up yet)
+  'https://Luke1606.dev/mycn18-consulting' # Direct link for professional consulting or support hours.
+]
+# -----------------------------------------------------------------------------

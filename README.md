@@ -27,3 +27,5 @@ Notes
 
 - This is an initial skeleton. The runtime uses `vm2` for sandboxing in `src/runtime.ts` and a small white-list of modules.
 - Do not pass real secrets in cleartext in production. This is an MVP scaffold; secure secret management is required before production.
+
+NOTA: Las donaciones a través de PayPal están gestionadas por un familiar directo para optimizar el soporte a MyCn18. Todo el apoyo recibido se destina 100% al mantenimiento y desarrollo de nuevas funciones.

@@ -11,21 +11,8 @@ github: [Luke1606]
 
 # Plataformas de Donación Rápida y Proyecto (Actualmente inactivas/no establecidas)
 
-patreon: # No activo.
-open_collective: # No establecido.
-ko_fi: # No activo.
-tidelift: # No aplicable para el alcance de este proyecto.
-community_bridge: # No aplicable.
-liberapay: # No activo.
-issuehunt: # No aplicable.
-lfx_crowdfunding: # No aplicable.
-polar: # No aplicable.
-buy_me_a_coffee: # No activo.
-
 # Reconocimiento Técnico
 # Esto financia automáticamente al mantenedor en función del uso.
-
-thanks_dev: Luke1606 
 
 # Enlaces Universales Personalizados
 # Estos enlaces proporcionan a los usuarios que no están en GitHub (por ejemplo, usuarios visuales/nodos) 
