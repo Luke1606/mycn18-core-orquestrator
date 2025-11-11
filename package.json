@@ -25,16 +25,19 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@google-cloud/secret-manager": "^6.1.1",
-    "@google-cloud/tasks": "^6.2.1",
+    "@types/lodash": "^4.17.20",
     "axios": "^1.4.0",
-    "firebase": "^12.5.0",
+    "bullmq": "^5.63.0",
     "hono": "^4.10.4",
+    "ioredis": "^5.8.2",
+    "lodash": "^4.17.21",
+    "pg": "^8.16.3",
     "vm2": "^3.9.16"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.1",
     "@types/node": "^24.10.0",
+    "@types/pg": "^8.15.6",
     "@typescript-eslint/eslint-plugin": "^8.46.3",
     "@typescript-eslint/parser": "^8.46.3",
     "@vitest/coverage-v8": "^4.0.8",
